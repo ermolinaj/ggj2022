@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameLogic : MonoBehaviour
 {
-    //Between 1 and 4
+    //Between 0 and #
     int sunPosition;
     
     List<Zone> zones;
@@ -12,22 +13,30 @@ public class GameLogic : MonoBehaviour
     void Start()
     {
         zones = new List<Zone>() { new Zone (), new Zone (), new Zone (), new Zone () };
-        sunPosition = 1;
+        sunPosition = 0;
+        UpdateSunVisibility();
 
-        InvokeRepeating("UpdateWorldSunnyParts", 0f, 1f);  //1s delay, repeat every 1s
-        InvokeRepeating("UpdateWorldTemperature", 0f, 1f);  //1s delay, repeat every 1s
-        InvokeRepeating("UpdateWorldPopulation", 0f, 1f);  //1s delay, repeat every 1s
-        InvokeRepeating("LogWorldStatus", 0f, 1f);  //1s delay, repeat every 1s
+        InvokeRepeating("UpdateWorldSunnyParts", 0f, 3f);  
+        InvokeRepeating("UpdateWorldTemperature", 0f, 3f); 
+        InvokeRepeating("UpdateWorldPopulation", 0f, 3f);  
+        InvokeRepeating("LogWorldStatus", 0f, 3f);
     }
 
     // Update is called once per frame
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
-            changeSunPositionRight();
+        {
+            ChangeSunPositionRight();
+            UpdateSunVisibility();
+        }
         
         if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
-            changeSunPositionLeft();
+        {
+            ChangeSunPositionLeft();
+            UpdateSunVisibility();
+        }
+            
     }
 
     void LogWorldStatus()
@@ -110,7 +119,15 @@ public class GameLogic : MonoBehaviour
         }
     }
 
-    void changeSunPositionLeft()
+    void UpdateSunVisibility()
+    {
+        for (int i = 0; i < 4; i ++)
+             GameObject.Find("Sun" + i.ToString()).GetComponent<SpriteRenderer>().enabled = false;
+        
+        GameObject.Find("Sun" + sunPosition.ToString()).GetComponent<SpriteRenderer>().enabled = true;
+    }
+
+    void ChangeSunPositionLeft()
     {
         if (sunPosition > 0 && sunPosition <= 3)
             sunPosition--;
@@ -119,7 +136,7 @@ public class GameLogic : MonoBehaviour
     }
 
     
-    void changeSunPositionRight()
+    void ChangeSunPositionRight()
     {
         if (sunPosition >= 0 && sunPosition < 3)
             sunPosition++;

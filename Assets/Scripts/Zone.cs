@@ -5,9 +5,11 @@ internal class Zone
     public int populationType = 0;
     public int population = 0;
 
+
+
     public void changeTemperature(int degrees)
     {
-        if (temperature + degrees < 10 || temperature + degrees > -10)
+        if (temperature + degrees <= 10 && temperature + degrees >= -10)
             temperature += degrees;
         else
         {
