@@ -2,8 +2,8 @@ internal class Zone
 {
     public bool isDaytime = false;
     public int temperature = 0;
-    public int populationType = 0;
-    public int population = 0;
+    public int humanPopulation = 0;
+    public int monsterPopulation = 0;
 
 
 
@@ -23,8 +23,13 @@ internal class Zone
         }
     }
 
-    public void addPopulation()
+    public bool IsSummer()
     {
-        population++;
+        return temperature >= 5;
+    }
+
+    public bool IsWinter()
+    {
+        return temperature <= -5;
     }
 }

@@ -6,7 +6,9 @@ public class GameLogic : MonoBehaviour
 {
     //Between 0 and #
     int sunPosition;
-    
+    int[ , , ] gridWorld = new int[4, 10, 10];
+    float coordinationSpace = 0.25f;
+
     List<Zone> zones;
 
     // Start is called before the first frame update
@@ -16,10 +18,11 @@ public class GameLogic : MonoBehaviour
         sunPosition = 0;
         UpdateSunVisibility();
 
-        InvokeRepeating("UpdateWorldSunnyParts", 0f, 3f);  
-        InvokeRepeating("UpdateWorldTemperature", 0f, 3f); 
-        InvokeRepeating("UpdateWorldPopulation", 0f, 3f);  
-        InvokeRepeating("LogWorldStatus", 0f, 3f);
+        InvokeRepeating("UpdateWorldSunnyParts", 0f, 1f);  
+        InvokeRepeating("UpdateWorldTemperature", 0f, 1f); 
+        InvokeRepeating("UpdateWorldPopulation", 0f, 1f);
+        // InvokeRepeating("UpdateWorldConflict", 0f, 3f);  
+        InvokeRepeating("LogWorldStatus", 0f, 1f);
     }
 
     // Update is called once per frame
@@ -45,7 +48,7 @@ public class GameLogic : MonoBehaviour
         int i = 0;
         foreach(Zone z in zones)
         {
-            Debug.Log("Zone " + i.ToString() + ". Population: " + z.population.ToString() + ". Temperature: " + z.temperature.ToString() + ". PopulationType: " + z.populationType.ToString() + "(0 = none, 1 = Human, 2 = Monster).");
+            Debug.Log("Zone " + i.ToString() + ". Human Population: " + z.humanPopulation.ToString() + ". Monster Population: " + z.monsterPopulation.ToString() +". Temperature: " + z.temperature.ToString() + ".");
             i ++;
         }
     }
@@ -79,26 +82,21 @@ public class GameLogic : MonoBehaviour
 
     void UpdateWorldPopulation()
     {
+        int zoneNumber = 0;
+
         foreach (Zone z in zones)
         {
-            if (z.temperature == 10)
+            if (z.IsSummer() && z.humanPopulation <= 100 && z.humanPopulation + z.monsterPopulation < 100)
             {
-                if (z.populationType == 0)
-                    z.populationType = 1;
-                if (z.populationType == 1)
-                    z.population ++;
-                if (z.populationType == 2 && z.population > 0)
-                    z.population --;
+                z.humanPopulation ++;
+                DrawHuman(zoneNumber);     
             }
-            if (z.temperature == -10)
+            if (z.IsWinter() && z.monsterPopulation < 100 && z.monsterPopulation + z.humanPopulation < 100)
             {
-                if (z.populationType == 0)
-                    z.populationType = 2;
-                if (z.populationType == 2)
-                    z.population ++;
-                if (z.populationType == 1 && z.population > 0)
-                    z.population --;
+                z.monsterPopulation ++;
+                DrawMonster(zoneNumber);
             }
+            zoneNumber ++;
         }
     }
      
@@ -106,13 +104,13 @@ public class GameLogic : MonoBehaviour
     {
         switch(sunPosition)
         {
-            case 1:
+            case 0:
                 return new int[] {0, 1};
-            case 2:
+            case 1:
                 return new int[] {1, 2};
-            case 3:
+            case 2:
                 return new int[] {2, 3};
-            case 4:
+            case 3:
                 return new int[] {3, 1};
             default:
                 return new int[] {0, 1};
@@ -142,5 +140,57 @@ public class GameLogic : MonoBehaviour
             sunPosition++;
         else
             sunPosition = 0;
+    }
+
+    void DrawHuman(int zoneNumber)
+    {
+        int[] positionInGrid = GetEmptyGridSpace(zoneNumber);
+        Vector3 positionInScene = CalculatePositionInScene(zoneNumber, positionInGrid);
+        
+        // Instantiate<HumanUnit>();
+        Instantiate(Resources.Load("HumanUnit"), positionInScene, new Quaternion ());
+        gridWorld[ positionInGrid[0], positionInGrid[1], positionInGrid[2] ] = 1;
+    }
+
+    void DrawMonster(int zoneNumber)
+    {
+        int[] positionInGrid = GetEmptyGridSpace(zoneNumber);
+        Vector3 positionInScene = CalculatePositionInScene(zoneNumber, positionInGrid);
+
+        // Instantiate<MonsterUnit>();
+        Instantiate(Resources.Load("MonsterUnit"), positionInScene, new Quaternion ());
+        gridWorld[ positionInGrid[0], positionInGrid[1], positionInGrid[2] ] = 2;
+    }
+
+    int [] GetEmptyGridSpace(int zoneNumber)
+    {
+        for (int h = 0; h < 10; h ++)
+        {
+            for (int w = 0; w < 10; w ++)
+            {
+                if (gridWorld[zoneNumber, h, w ] == 0)
+                    return new int[] { zoneNumber, h, w };
+            }
+        }
+
+        return new int[] {};
+    }
+
+    Vector3 CalculatePositionInScene(int zoneNumber, int[] gridPosition)
+    {
+        switch(zoneNumber)
+        {
+            case 0:
+                return new Vector3(-0.25f * (gridPosition[2] + 1), 0.25f * (gridPosition[1] + 1), -0.5f);
+            case 1:
+                return new Vector3(0.25f * (gridPosition[2] + 1), 0.25f * (gridPosition[1] + 1), -0.5f);
+            case 2:
+                return new Vector3(0.25f * (gridPosition[2] + 1), -0.25f * (gridPosition[1] + 1), -0.5f);
+            case 3:
+                return  new Vector3(-0.25f * (gridPosition[2] + 1), -0.25f * (gridPosition[1] + 1), -0.5f);
+            default:
+                return new Vector3();
+        }
+
     }
 }
