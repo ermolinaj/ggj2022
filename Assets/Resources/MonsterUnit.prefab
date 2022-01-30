@@ -91,6 +91,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 994220631193822038}
+  - component: {fileID: 67042117638064060}
   m_Layer: 0
   m_Name: MonsterUnit
   m_TagString: Untagged
@@ -113,3 +114,16 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &67042117638064060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 994220631193822039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ad33223c90e04a4981277a6bade0b93, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Zone: 0

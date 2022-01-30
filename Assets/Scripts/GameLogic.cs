@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class GameLogic : MonoBehaviour
 {
@@ -8,6 +10,8 @@ public class GameLogic : MonoBehaviour
     int sunPosition;
     int[ , , ] gridWorld = new int[4, 10, 10];
     float coordinationSpace = 0.25f;
+    int secondsAlive = 0;
+    bool areYaWinningSon = true;
 
     List<Zone> zones;
 
@@ -18,11 +22,14 @@ public class GameLogic : MonoBehaviour
         sunPosition = 0;
         UpdateSunVisibility();
 
-        InvokeRepeating("UpdateWorldSunnyParts", 0f, 1f);  
-        InvokeRepeating("UpdateWorldTemperature", 0f, 1f); 
-        InvokeRepeating("UpdateWorldPopulation", 0f, 1f);
-        // InvokeRepeating("UpdateWorldConflict", 0f, 3f);  
-        InvokeRepeating("LogWorldStatus", 0f, 1f);
+        InvokeRepeating("UpdateWorldSunnyParts", 0f, 0.1f);  
+        InvokeRepeating("UpdateWorldTemperature", 0f, 0.1f); 
+        InvokeRepeating("UpdateWorldPopulation", 0f, 0.1f);
+        InvokeRepeating("UpdateWorldConflict", 0f, 0.1f);  
+        InvokeRepeating("LogWorldStatus", 0f, 0.1f);
+        InvokeRepeating("UpdateSeconds", 0f, 1f);
+        InvokeRepeating("CheckWinConditionAndUpdateIt", 0f, 1f);
+        
     }
 
     // Update is called once per frame
@@ -50,6 +57,29 @@ public class GameLogic : MonoBehaviour
         {
             Debug.Log("Zone " + i.ToString() + ". Human Population: " + z.humanPopulation.ToString() + ". Monster Population: " + z.monsterPopulation.ToString() +". Temperature: " + z.temperature.ToString() + ".");
             i ++;
+        }
+    }
+
+    void UpdateSeconds()
+    {
+        if (areYaWinningSon)
+            secondsAlive++;
+    }
+
+    void CheckWinConditionAndUpdateIt()
+    {
+        int doomedZones = 0;
+        foreach(Zone z in zones)
+        {
+            if (z.humanPopulation + z.monsterPopulation == 100)
+                doomedZones ++;                
+        }
+
+        if (doomedZones == 4)
+        {
+            areYaWinningSon = false;
+            GameObject.Find("endscreen").GetComponentInChildren<Canvas>().GetComponentInChildren<Text>().text = secondsAlive.ToString();
+            GameObject.Find("endscreen").GetComponent<SpriteRenderer>().enabled = true;
         }
     }
 
@@ -99,6 +129,61 @@ public class GameLogic : MonoBehaviour
             zoneNumber ++;
         }
     }
+
+    void UpdateWorldConflict()
+    {
+        int zoneNumber = 0;
+        foreach (Zone z in zones)
+        {
+            if (z.humanPopulation + z.monsterPopulation == 100 && (z.humanPopulation != 0 && z.monsterPopulation != 0))
+            {
+                if (z.humanPopulation > z.monsterPopulation)
+                {
+                    z.monsterPopulation = 0;
+                    if (z.humanPopulation + 5 < 100)
+                        z.humanPopulation += 5;
+                    else
+                        z.humanPopulation = 100;
+
+                    
+                    for(int h = 0; h < 10; h++)
+                    {
+                        for (int w = 0; w < 10; w++)
+                        {
+                            gridWorld[zoneNumber, h, w] = 0;
+                        }
+                    }
+
+                    DeleteUnits(zoneNumber);
+
+                    for (int i = 1; i <= z.humanPopulation; i ++)
+                        DrawHuman(zoneNumber);
+                }
+                if (z.monsterPopulation > z.humanPopulation)
+                {
+                    z.humanPopulation = 0;
+                    if (z.monsterPopulation + 5 < 100)
+                        z.monsterPopulation += 5;
+                    else
+                        z.monsterPopulation = 100;
+
+                    for(int h = 0; h < 10; h++)
+                    {
+                        for (int w = 0; w < 10; w++)
+                        {
+                            gridWorld[zoneNumber, h, w] = 0;
+                        }
+                    }
+
+                    DeleteUnits(zoneNumber);
+                    
+                    for (int i = 1; i <= z.monsterPopulation; i ++)
+                        DrawMonster(zoneNumber);
+                }
+            }
+            zoneNumber ++;
+        }
+    }
      
     int[] ZonesAffectedBySun()
     {
@@ -132,7 +217,6 @@ public class GameLogic : MonoBehaviour
         else
             sunPosition = 3;
     }
-
     
     void ChangeSunPositionRight()
     {
@@ -147,7 +231,7 @@ public class GameLogic : MonoBehaviour
         int[] positionInGrid = GetEmptyGridSpace(zoneNumber);
         Vector3 positionInScene = CalculatePositionInScene(zoneNumber, positionInGrid);
         
-        // Instantiate<HumanUnit>();
+        // GameObject newUnit = (GameObject)Instantiate(Resources.Load("HumanUnit"), positionInScene, new Quaternion ());
         Instantiate(Resources.Load("HumanUnit"), positionInScene, new Quaternion ());
         gridWorld[ positionInGrid[0], positionInGrid[1], positionInGrid[2] ] = 1;
     }
@@ -157,9 +241,47 @@ public class GameLogic : MonoBehaviour
         int[] positionInGrid = GetEmptyGridSpace(zoneNumber);
         Vector3 positionInScene = CalculatePositionInScene(zoneNumber, positionInGrid);
 
-        // Instantiate<MonsterUnit>();
         Instantiate(Resources.Load("MonsterUnit"), positionInScene, new Quaternion ());
+        
         gridWorld[ positionInGrid[0], positionInGrid[1], positionInGrid[2] ] = 2;
+    }
+
+    void DeleteUnits(int zoneNumber)
+    {
+        GameObject[] objectsInScene = SceneManager.GetActiveScene().GetRootGameObjects();
+
+        if (zoneNumber == 0)
+        {
+            foreach (GameObject o in objectsInScene)
+            {
+                if (o.transform.position.x < 0 && o.transform.position.y > 0 && o.transform.position.z == -0.5f)
+                    Destroy(o);
+            }
+        }
+        if (zoneNumber == 1)
+        {
+            foreach (GameObject o in objectsInScene)
+            {
+                if (o.transform.position.x > 0 && o.transform.position.y > 0 && o.transform.position.z == -0.5f)
+                    Destroy(o);
+            }
+        }
+        if (zoneNumber == 2)
+        {
+            foreach (GameObject o in objectsInScene)
+            {
+                if (o.transform.position.x > 0 && o.transform.position.y < 0 && o.transform.position.z == -0.5f)
+                    Destroy(o);
+            }
+        }
+        if (zoneNumber == 3)
+        {
+            foreach (GameObject o in objectsInScene)
+            {
+                if (o.transform.position.x < 0 && o.transform.position.y < 0 && o.transform.position.z == -0.5f)
+                    Destroy(o);
+            }
+        }
     }
 
     int [] GetEmptyGridSpace(int zoneNumber)
